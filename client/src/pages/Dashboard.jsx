@@ -61,131 +61,126 @@ function Dashboard() {
 
     const handleLogout = () => { localStorage.removeItem("token"); navigate("/"); };
 
-    // Unread count — last visit timestamp per group stored in localStorage
-    const getUnread = (groupId) => {
-        const lastSeen = localStorage.getItem(`lastSeen_${groupId}`);
-        return lastSeen ? null : "new"; // simplified — just shows "new" if never visited
-    };
+        const initial = (text) => (text?.trim()?.[0] || "?").toUpperCase();
 
     return (
         <div className="dashboard">
-            <div className="dashboard-header">
-                <div>
-                    <h1>NexChat</h1>
-                    {user && <p className="welcome-text">Hey, {user.name} 👋</p>}
+            <header className="dashboard-header">
+                <div className="brand">
+                    <span className="brand-mark">H</span>
+                    <div>
+                        <h1>Huddle</h1>
+                        {user && <p className="welcome-text">Signed in as {user.name}</p>}
+                    </div>
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Sign out</button>
-            </div>
+            </header>
 
-            {/* Create group */}
-            <CreateGroup onGroupCreated={fetchGroups} />
-
-            {/* Join by invite code */}
-            <div className="create-group-card" style={{ marginBottom: "1.5rem" }}>
-                <h2>Join a Group</h2>
-                <form onSubmit={handleJoinByCode}>
-                    <div className="create-group-row">
-                        <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-                            <input
-                                className="input"
-                                type="text"
-                                placeholder="Paste invite code (e.g. a1b2c3d4)"
-                                value={joinCode}
-                                onChange={(e) => setJoinCode(e.target.value)}
-                            />
+            <div className="dash-grid">
+                <section>
+                    <p className="section-title">Your Groups</p>
+                    {groups.length === 0 ? (
+                        <div className="empty-state">
+                            No groups yet. Create one or join with an invite code.
                         </div>
-                        <button className="btn btn-primary" type="submit" style={{ width: "auto" }}>
-                            Join
-                        </button>
-                    </div>
-                </form>
-                {joinMsg && (
-                    <p style={{
-                        marginTop: "0.5rem", fontSize: "0.85rem",
-                        color: joinMsg.includes("success") ? "#22c55e" : "var(--danger)"
-                    }}>
-                        {joinMsg}
-                    </p>
-                )}
-            </div>
+                    ) : (
+                        <ul className="group-list">
+                            {groups.map((group) => (
+                                <li key={group._id} className="group-item">
+                                    <div className="group-main">
+                                        <span className="group-avatar">{initial(group.name)}</span>
+                                        <div>
+                                            <Link to={`/groups/${group._id}`}>{group.name}</Link>
+                                            {group.description && (
+                                                <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
+                                                    {group.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        className="btn btn-primary btn-sm"
+                                        onClick={() => navigate(`/chat/${group._id}`)}
+                                    >
+                                        Open chat
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
 
-            {/* Search groups */}
-            <div className="create-group-card" style={{ marginBottom: "2rem" }}>
-                <h2>Search Groups</h2>
-                <form onSubmit={handleSearch}>
-                    <div className="create-group-row">
-                        <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-                            <input
-                                className="input"
-                                type="text"
-                                placeholder="Search by name or description..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                        <button className="btn btn-ghost" type="submit" style={{ width: "auto" }}>
-                            {searching ? "..." : "Search"}
-                        </button>
-                    </div>
-                </form>
+                <aside className="dash-side">
+                    <CreateGroup onGroupCreated={fetchGroups} />
 
-                {searchResults.length > 0 && (
-                    <ul className="group-list" style={{ marginTop: "1rem", marginBottom: 0 }}>
-                        {searchResults.map((g) => (
-                            <li key={g._id} className="group-item">
-                                <div>
-                                    <strong style={{ fontSize: "0.9rem" }}>{g.name}</strong>
-                                    {g.description && (
-                                        <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.1rem" }}>
-                                            {g.description}
-                                        </p>
-                                    )}
-                                    <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-                                        {g.members.length} members
-                                    </p>
+                    <div className="create-group-card">
+                        <h2>Join a group</h2>
+                        <form onSubmit={handleJoinByCode}>
+                            <div className="create-group-row">
+                                <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                                    <input
+                                        className="input"
+                                        type="text"
+                                        placeholder="Invite code"
+                                        value={joinCode}
+                                        onChange={(e) => setJoinCode(e.target.value)}
+                                    />
                                 </div>
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => navigate(`/groups/${g._id}`)}
-                                >
-                                    View →
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-
-            {/* My groups */}
-            <p className="section-title">Your Groups</p>
-            {groups.length === 0 ? (
-                <div className="empty-state">
-                    No groups yet — create one or join with an invite code.
-                </div>
-            ) : (
-                <ul className="group-list">
-                    {groups.map((group) => (
-                        <li key={group._id} className="group-item">
-                            <div>
-                                <Link to={`/groups/${group._id}`} style={{ display: "block" }}>
-                                    {group.name}
-                                </Link>
-                                {group.description && (
-                                    <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.1rem" }}>
-                                        {group.description}
-                                    </p>
-                                )}
+                                <button className="btn btn-primary" type="submit">Join</button>
                             </div>
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                onClick={() => navigate(`/chat/${group._id}`)}
-                            >
-                                Open Chat →
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
+                        </form>
+                        {joinMsg && (
+                            <p style={{
+                                marginTop: "0.5rem", fontSize: "0.85rem",
+                                color: joinMsg.includes("success") ? "var(--primary)" : "var(--danger)",
+                            }}>
+                                {joinMsg}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="create-group-card">
+                        <h2>Search groups</h2>
+                        <form onSubmit={handleSearch}>
+                            <div className="create-group-row">
+                                <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                                    <input
+                                        className="input"
+                                        type="text"
+                                        placeholder="Name or description"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <button className="btn btn-ghost" type="submit">
+                                    {searching ? "..." : "Search"}
+                                </button>
+                            </div>
+                        </form>
+
+                        {searchResults.length > 0 && (
+                            <ul className="group-list" style={{ marginTop: "1rem" }}>
+                                {searchResults.map((g) => (
+                                    <li key={g._id} className="group-item">
+                                        <div>
+                                            <strong style={{ fontSize: "0.9rem" }}>{g.name}</strong>
+                                            <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                                                {g.members.length} members
+                                            </p>
+                                        </div>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => navigate(`/groups/${g._id}`)}
+                                        >
+                                            View
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </aside>
+            </div>
         </div>
     );
 }
